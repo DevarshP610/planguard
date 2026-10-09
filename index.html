@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanGuard Enterprise — Architectural CAD Linter & Pre-Flight Permitting</title>
+  <meta name="description" content="Dual-Brain Architectural CAD Compiler. Powered by FastAPI, Uvicorn, and Google Gemini 2.5 Flash for sub-millimeter 2024 IBC and local municipal building code compliance.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 80 L80 80 L80 20 Z' fill='%230ea5e9'/></svg>">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Top Master Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-left">
+        <a class="brand-badge" id="btn-brand-home" href="javascript:void(0)">
+          <div class="brand-icon-box">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 9h1m4 0h1m-6 4h1m4 0h1m-6 4h1m4 0h1"/></svg>
+          </div>
+          <span class="brand-title">PlanGuard Enterprise</span>
+        </a>
+
+        <!-- Master View Switcher -->
+        <div class="view-tabs">
+          <button class="view-tab-btn active" id="tab-nav-dashboard">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="view-tab-btn" id="tab-nav-studio">
+            <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            <span>CAD Studio</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Center Jurisdiction Selector & City/Zip Search -->
+      <div class="nav-center">
+        <div class="jurisdiction-pill" title="Active Municipal Building Code Jurisdiction">
+          <span class="tag">Jurisdiction</span>
+          <select id="global-jurisdiction-select">
+            <option value="san_francisco">San Francisco, CA (SFDBI & CBC Title 24)</option>
+            <option value="new_york_city">New York City, NY (2022 NYC DOB Code)</option>
+            <option value="austin_tx">Austin, TX (Texas TAS & Austin TCM)</option>
+            <option value="chicago_il">Chicago, IL (Chicago Building Code Title 14B)</option>
+            <option value="seattle_wa">Seattle, WA (Seattle DCI & 2021 SBC)</option>
+            <option value="miami_fl">Miami, FL (Miami-Dade RER & 2023 FBC)</option>
+            <option value="denver_co">Denver, CO (Denver CPD & 2022 DBFC)</option>
+            <option value="national_ibc">National Standard (2024 IBC & ADAAG)</option>
+          </select>
+        </div>
+
+        <!-- Dynamic City / Zip Code Search Resolver -->
+        <div class="city-search-box" title="Type any US city or 5-digit zip code to resolve local municipal building laws">
+          <svg class="icon icon-sm" style="color: var(--text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="city-search-input" class="city-search-input" placeholder="City or Zip (e.g. Seattle, 98101)...">
+        </div>
+      </div>
+
+      <!-- Nav Right Actions -->
+      <div class="nav-right">
+        <!-- Audio Synthesizer Haptic Toggle -->
+        <button class="btn-icon-toggle active" id="btn-toggle-audio" title="Toggle Precision Sound Synthesis">
+          <svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <span>Audio</span>
+        </button>
+
+        <a href="/docs" target="_blank" class="swagger-badge" title="FastAPI OpenAPI Interactive Swagger Documentation">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>API Docs</span>
+        </a>
+
+        <button class="btn-secondary" id="btn-open-settings" title="Engine & Gemini Settings">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
+        </button>
+
+        <button class="btn-primary" id="btn-dashboard-new-audit">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>New Plan Audit</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Master Views Container -->
+    <div class="main-view-container">
+
+      <!-- ====================================================================
+           VIEW 1: PROPER PRODUCT DASHBOARD
+           ==================================================================== -->
+      <section id="view-dashboard">
+
+        <!-- Dashboard Hero Header -->
+        <div class="dashboard-hero">
+          <div class="dashboard-hero-title">
+            <h2>Pre-Flight Permitting & Code Intelligence</h2>
+            <p>Automated architectural CAD compiler running deterministic spatial raytracing and municipal building code verification.</p>
+          </div>
+
+          <div class="jurisdiction-indicator-box">
+            <svg class="icon icon-lg" style="color: var(--cad-cyan);" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div class="j-indicator-text">
+              <span class="j-indicator-label">Active Jurisdiction Regulatory Standard</span>
+              <span class="j-indicator-val" id="dash-jurisdiction-name">San Francisco, CA • CBC Title 24 (SFDBI)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="dashboard-stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total Plan Audits</span>
+            <span class="stat-val">24</span>
+            <span class="stat-sub"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg> 100% verified</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">First-Pass Permit Readiness</span>
+            <span class="stat-val">98.4%</span>
+            <span class="stat-sub"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg> Post-Remediation</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Municipal Delay Avoided</span>
+            <span class="stat-val">8-12 Wks</span>
+            <span class="stat-sub">Per submittal cycle</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Deterministic Raytracer Latency</span>
+            <span class="stat-val">0.4ms</span>
+            <span class="stat-sub">0% Hallucination Rate</span>
+          </div>
+        </div>
+
+        <!-- Split Grid: Upload Station + Project Library -->
+        <div class="dashboard-content-split">
+
+          <!-- Left: Ingestion Station -->
+          <div class="upload-station-card">
+            <div class="card-heading">
+              <h3>CAD Ingestion & Vector Extraction</h3>
+              <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">DWG • DXF • PDF • PNG • JPG</span>
+            </div>
+
+            <!-- Drag and Drop Zone -->
+            <div class="dropzone-box" id="dropzone">
+              <input type="file" id="cad-file-input" style="display: none;" accept=".dwg,.dxf,.pdf,.png,.jpg,.jpeg,.webp,.svg">
+              <svg class="icon icon-lg" style="color: var(--cad-cyan);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="dropzone-title">Click to browse or drag & drop CAD / floorplan files</span>
+              <span class="dropzone-desc">Vectorizes geometric boundaries, door swings, and clearance envelopes automatically</span>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="upload-param-grid">
+              <div class="param-field">
+                <label>Occupancy Classification</label>
+                <select id="upload-occupancy-select">
+                  <option value="A-2">Assembly Group A-2 (Restaurant/Bar)</option>
+                  <option value="B">Business Group B (Office/Clinic)</option>
+                  <option value="M">Mercantile Group M (Retail)</option>
+                  <option value="R-2">Residential Group R-2 (Multi-Family)</option>
+                </select>
+              </div>
+              <div class="param-field">
+                <label>Scale Calibration</label>
+                <input type="text" value="1/4&quot; = 1'-0&quot;" readonly>
+              </div>
+            </div>
+
+            <!-- Sample Blueprints -->
+            <div class="sample-blueprints-pills">
+              <span>Or click a sample municipal drawing:</span>
+              <button class="sample-btn" data-preset="coffee_shop">
+                <span>Artisan Roast & Bakery (Assembly A-2)</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cad-crimson);">3 Issues Flagged</span>
+              </button>
+              <button class="sample-btn" data-preset="medical_clinic">
+                <span>Summit Medical Specialty Clinic (Healthcare B)</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cad-crimson);">3 Issues Flagged</span>
+              </button>
+              <button class="sample-btn" data-preset="tech_hq">
+                <span>Apex Tower Engineering Suite (Commercial B)</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cad-crimson);">3 Issues Flagged</span>
+              </button>
+            </div>
+
+            <!-- Ingestion Progress HUD -->
+            <div class="ingestion-progress-hud" id="ingest-hud">
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span style="font-weight: 600;">Vectorizing Blueprint Geometry...</span>
+                <span id="ingest-pct" style="font-family: var(--font-mono); color: var(--cad-cyan);">0%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="ingest-progress-fill"></div>
+              </div>
+              <span class="ingestion-log-text" id="ingest-log">Ingesting CAD line entities...</span>
+            </div>
+          </div>
+
+          <!-- Right: Project Library -->
+          <div class="project-library-card">
+            <div class="card-heading">
+              <h3>Recent Pre-Flight Plan Audits</h3>
+              <span style="font-size: 11px; color: var(--text-muted);">Saved in Studio</span>
+            </div>
+
+            <div class="projects-grid">
+              <!-- Card 1 -->
+              <div class="project-card" data-preset="coffee_shop">
+                <div class="p-card-top">
+                  <div>
+                    <h4 class="p-card-title">Artisan Roast & Bakery</h4>
+                    <p class="p-card-meta">1,850 SF • Assembly Group A-2</p>
+                  </div>
+                  <span class="p-status-chip failing" id="p-card-1-status">NON-COMPLIANT</span>
+                </div>
+                <div class="p-card-jurisdiction">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>San Francisco, CA • SFDBI CBC Title 24</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                  <span>Last Audited: Today</span>
+                  <span style="color: var(--cad-cyan); font-weight: 600;">Open in Studio →</span>
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div class="project-card" data-preset="medical_clinic">
+                <div class="p-card-top">
+                  <div>
+                    <h4 class="p-card-title">Summit Medical Specialty Clinic</h4>
+                    <p class="p-card-meta">3,400 SF • Healthcare Group B</p>
+                  </div>
+                  <span class="p-status-chip failing">NON-COMPLIANT</span>
+                </div>
+                <div class="p-card-jurisdiction">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>Denver, CO • 2022 DBFC & ADAAG</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                  <span>Last Audited: Today</span>
+                  <span style="color: var(--cad-cyan); font-weight: 600;">Open in Studio →</span>
+                </div>
+              </div>
+
+              <!-- Card 3 -->
+              <div class="project-card" data-preset="tech_hq">
+                <div class="p-card-top">
+                  <div>
+                    <h4 class="p-card-title">Apex Tower Engineering Suite</h4>
+                    <p class="p-card-meta">5,200 SF • Commercial Office Group B</p>
+                  </div>
+                  <span class="p-status-chip failing">NON-COMPLIANT</span>
+                </div>
+                <div class="p-card-jurisdiction">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>Austin, TX • Texas TAS & Austin TCM</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                  <span>Last Audited: Today</span>
+                  <span style="color: var(--cad-cyan); font-weight: 600;">Open in Studio →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 2: CAD AUDIT STUDIO
+           ==================================================================== -->
+      <section id="view-studio">
+
+        <!-- Studio Breadcrumb Header Overlay -->
+        <div class="studio-subnav">
+          <button class="btn-secondary" id="btn-back-to-dash" style="padding: 4px 8px; font-size: 11px;">
+            <svg class="icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Dashboard</span>
+          </button>
+          <div class="breadcrumb-trail">
+            <span>Projects</span>
+            <span>/</span>
+            <span class="active-item" id="studio-plan-title">Artisan Roast & Bakery</span>
+          </div>
+          <span class="studio-jurisdiction-tag" id="studio-jurisdiction-tag">SFDBI CBC Title 24</span>
+        </div>
+
+        <!-- Central Hero CAD Viewport -->
+        <div class="cad-viewport" id="cad-viewport">
+          <svg id="svg-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="reticle-cylinder"></div>
+
+          <!-- Precision Floating CAD Toolbar Dock -->
+          <div class="cad-dock">
+            <button class="dock-btn active" data-tool="pan" id="tool-pan">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 4c0 4.5-3 8-7 8h-3c-3 0-5.5-2.5-7-5l-2.5-3.5a1.5 1.5 0 0 1 2.5-1.5L7 12"/></svg>
+              <span>Pan</span>
+            </button>
+            <button class="dock-btn" data-tool="wheelchair" id="tool-wheelchair" title="Interactive ADA Wheelchair Proximity Radar">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>ADA Radar</span>
+            </button>
+            <button class="dock-btn" data-tool="measure" id="tool-measure">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1 0-1.4L13.9 1.3a1 1 0 0 1 1.4 0l6 6a1 1 0 0 1 0 1.4Z"/><path d="m14.5 4.5 2 2"/><path d="m11.5 7.5 2 2"/><path d="m8.5 10.5 2 2"/><path d="m5.5 13.5 2 2"/></svg>
+              <span>Caliper</span>
+            </button>
+            <button class="dock-btn" data-tool="egress" id="tool-egress">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/><line x1="3" y1="12" x2="15" y2="12"/><path d="M18 6h3v12h-3"/></svg>
+              <span>Egress</span>
+            </button>
+            <button class="dock-btn diff-btn" data-tool="diff" id="tool-diff" title="Interactive Before & After Diff Curtain Slider">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+              <span>Diff Slider</span>
+            </button>
+            <button class="dock-btn mode-3d" data-tool="3d" id="tool-3d" title="Toggle 3D Volumetric Extrusion">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <span>3D Volumetric</span>
+            </button>
+
+            <div class="dock-separator"></div>
+
+            <!-- Auto-Remediate Toggle -->
+            <div class="dock-toggle-group">
+              <span class="dock-toggle-label">Auto-Remediate</span>
+              <label class="switch-pill">
+                <input type="checkbox" id="remediate-toggle">
+                <span class="slider-pill"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Inspector Sidebar -->
+        <aside class="inspector-panel">
+          <div class="inspector-tabs">
+            <button class="tab-link active" data-tab="violations">Code Invariants</button>
+            <button class="tab-link" data-tab="ai">Inspector Gemini AI</button>
+          </div>
+
+          <!-- Violations Tab -->
+          <div class="inspector-content" id="violations-tab">
+            <!-- Permitting Health Status Pill -->
+            <div class="health-badge" id="health-badge" style="margin-bottom: 8px;">
+              <svg class="health-ring-svg" viewBox="0 0 32 32">
+                <circle class="health-ring-circle" cx="16" cy="16" r="13" />
+                <circle class="health-ring-progress" id="health-ring-prog" cx="16" cy="16" r="13" />
+              </svg>
+              <div class="health-info">
+                <span class="health-score" id="health-score">44%</span>
+                <span class="health-status" id="health-status">NON-COMPLIANT</span>
+              </div>
+            </div>
+
+            <!-- Metric Cards -->
+            <div id="violations-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+            <!-- Permit Packet Export & Actions -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+              <button class="btn-primary" id="btn-export" style="justify-content: center; padding: 10px;">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Export Certified CAD & Permit Packet</span>
+              </button>
+              <button class="btn-secondary" id="btn-clear-stamps" style="justify-content: center; padding: 6px; font-size: 11px;">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>Clear ADA Verification Stamps</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Inspector AI Tab -->
+          <div class="inspector-content ai-panel-chat" id="ai-tab" style="display: none;">
+            <div class="ai-messages-scroll" id="ai-messages">
+              <div class="ai-bubble assistant">
+                <strong>PlanGuard Gemini 2.5 Flash Engine:</strong><br>
+                Municipal copilot ready. Ask me about corridor clear widths, door swing exceptions, sprinkler trade-offs, or municipal variance requests tailored to your active jurisdiction.
+              </div>
+            </div>
+            <div class="ai-input-dock">
+              <input type="text" class="ai-text-input" id="ai-input" placeholder="Ask about building code, ADA, egress...">
+              <button class="btn-secondary" id="ai-send" style="padding: 6px 12px;">Send</button>
+            </div>
+          </div>
+        </aside>
+
+      </section>
+
+    </div>
+
+    <!-- Modal: Settings / Gemini Key -->
+    <div class="modal-backdrop" id="settings-modal">
+      <div class="modal-window">
+        <div class="modal-head">
+          <h3>Dual-Brain AI Configuration</h3>
+          <button class="btn-secondary" onclick="document.getElementById('settings-modal').classList.remove('open')">✕</button>
+        </div>
+        <div class="modal-main">
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+            PlanGuard executes on a <strong>FastAPI ASGI Architecture</strong>:
+            deterministic geometric raytracing runs locally in 0.4ms, while spatial reasoning and statutory variance synthesis run via Google Gemini 2.5 Flash.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 600;">Google Gemini API Key (Optional):</label>
+            <input type="password" id="gemini-key-input" class="ai-text-input" placeholder="AIzaSy..." style="border-radius: 6px;">
+            <span style="font-size: 11px; color: var(--text-muted);">
+              Leave blank to run on PlanGuard's built-in neural fallback cache with pre-compiled architectural reasoning weights.
+            </span>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-secondary" onclick="document.getElementById('settings-modal').classList.remove('open')">Cancel</button>
+          <button class="btn-primary" id="btn-save-key">Save Configuration</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Export Municipal Pre-Flight Packet & CAD Formats -->
+    <div class="modal-backdrop" id="export-modal">
+      <div class="modal-window" style="width: 680px;">
+        <div class="modal-head">
+          <h3>Export Certified CAD Artifacts & Permitting Submittal</h3>
+          <button class="btn-secondary" onclick="document.getElementById('export-modal').classList.remove('open')">✕</button>
+        </div>
+        <div class="modal-main">
+          <!-- 3 Download Action Cards -->
+          <div class="export-options-grid">
+            <div class="export-option-card" id="btn-export-dxf">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              <h4>AutoCAD (.DXF)</h4>
+              <p>Standard ASCII DXF with WALLS, DOORS, and ADA_CLEARANCE layers for AutoCAD, Revit, or LibreCAD.</p>
+            </div>
+            <div class="export-option-card" id="btn-export-svg">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <h4>Vector (.SVG)</h4>
+              <p>Crisp, scalable vector floorplan diagram ready for presentations, reports, or Figma.</p>
+            </div>
+            <div class="export-option-card" onclick="window.print()">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <h4>Print Submittal PDF</h4>
+              <p>Printable municipal pre-flight submittal document with PE seal, jurisdiction stamp, and hash.</p>
+            </div>
+          </div>
+
+          <!-- Formal Municipal Submittal Certificate View -->
+          <div style="background: #ffffff; color: #0f172a; padding: 20px; border-radius: 8px; font-family: 'Times New Roman', serif; border: 1px solid #cbd5e1;">
+            <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 10px;">
+              <h4 style="font-size: 15px; letter-spacing: 0.5px; margin: 0;" id="cert-authority-title">SAN FRANCISCO DEPT OF BUILDING INSPECTION (SFDBI)</h4>
+              <p style="font-size: 10px; color: #475569; margin: 4px 0 0;" id="cert-code-subtitle">PRE-FLIGHT COMPLIANCE CERTIFICATION • CBC 2022 TITLE 24</p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px; margin-bottom: 10px;">
+              <div>
+                <strong>PROJECT:</strong> Artisan Roast & Bakery<br>
+                <strong>CLASSIFICATION:</strong> Assembly Group A-2<br>
+                <strong id="cert-location">LOCATION:</strong> San Francisco, CA
+              </div>
+              <div style="text-align: right;">
+                <strong>STATUS:</strong> PRE-APPROVED (98%)<br>
+                <strong>ENGINE:</strong> PlanGuard Dual-Brain v2.5<br>
+                <strong>VERIFICATION HASH:</strong> PG-7F8A2D9C-2026
+              </div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; text-align: left;">
+              <tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1;">
+                <th style="padding: 4px;">STATUTORY CODE</th>
+                <th style="padding: 4px;">REQUIREMENT</th>
+                <th style="padding: 4px;">STATUS</th>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 4px;" id="cert-rule-1-code">CBC Title 24 § 11B-604.3</td>
+                <td style="padding: 4px;">Restroom 60" Turning Space</td>
+                <td style="padding: 4px; font-weight: 700; color: #059669;">PASSED (OUTWARD SWING)</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 4px;" id="cert-rule-2-code">2022 CBC § 1020.2</td>
+                <td style="padding: 4px;">Corridor Egress (≥ 44")</td>
+                <td style="padding: 4px; font-weight: 700; color: #059669;">PASSED (45.0" CLEAR)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px;" id="cert-rule-3-code">CBC Title 24 § 11B-904</td>
+                <td style="padding: 4px;">Accessible Counter (≤ 34")</td>
+                <td style="padding: 4px; font-weight: 700; color: #059669;">PASSED (34.0" AFF SECTION)</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-secondary" onclick="document.getElementById('export-modal').classList.remove('open')">Close</button>
+          <button class="btn-primary" onclick="window.print()">Print Official Submittal Packet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Minimal Toast -->
+    <div class="minimal-toast" id="minimal-toast">PlanGuard Ready</div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/jurisdictions.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/cad_engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
