@@ -109,33 +109,6 @@ python backend/test_engine.py
 - `[OK] Gemini Neural Engine Passed: Synthesized response from planguard-hybrid-brain`
 - **ALL 4 ENGINES VERIFIED 100% OPERATIONAL.**
 
----
-
-## 🏆 The 3-Minute Hackathon Pitch Script
-
-### 1. The Hook (0:00 - 0:30)
-> *"Judges, 60% of commercial architectural permit applications get rejected by municipal building departments for simple geometric errors—a door clearance 2 inches too narrow, a wheelchair turning circle clipped by a door swing, or a hallway pinched below code.*  
-> *Each rejection costs property owners $15,000+ in fees and creates 8 to 12 weeks of dead time.*  
-> ***PlanGuard is the automated compiler and linter for physical architecture.***"*
-
-### 2. The Dual-Brain Synergy (0:30 - 1:15)
-> *"Unlike fragile LLM wrappers, PlanGuard uses a **Dual-Brain Hybrid Architecture**:*  
-> *1. **Our Deterministic Geometric Brain** runs locally in 0.4 milliseconds, performing sub-millimeter vector raytracing against 2024 International Building Code and ADA standards with a 0% hallucination rate.*  
-> *2. **Google Gemini 2.5 Flash** acts as our neural architectural copilot, performing contextual spatial reasoning, occupancy load analysis, and municipal variance justification."*
-
-### 3. The Live Showstopper Demo (1:15 - 2:15)
-1. **Show the Clean CAD Viewport:** Point to the high-density vector canvas. Notice the clean metric delta chips: `[34.2" Measured] -> [44.0" Min] (Δ -9.8")`. Zero text overload, pure precision.
-2. **Interactive Tools:**
-   - Click the **60" Cylinder Tool (`♿`)**: Move it across the restroom door—watch it flash crimson on collision.
-   - Click the **Caliper Tool (`📐`)**: Click two points to measure any clear span in real-time.
-3. **The Auto-Remediate Slider:**
-   - Flip the **Auto-Remediate** switch in the bottom dock.
-   - Watch the vector geometry dynamically transform live on screen:
-     - The restroom door flips outward.
-     - The partition wall shifts 10 inches west, expanding the corridor to a compliant 45.0 inches.
-     - The counter drops an ADA 34" AFF surface.
-   - **The Permitting Health Ring jumps from 44% (NON-COMPLIANT) to 98% (PERMIT-READY)!**
-4. **Click "Export Permit Packet":**
    - Instantly renders the stamped **"Municipal Pre-Flight Compliance Verification"** certificate ready for city plan examiners.
 
 ### 4. The Close (2:15 - 2:30)
